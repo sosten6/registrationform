@@ -2,6 +2,8 @@ import java.sql.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 public class RegistrationForm extends JFrame {
     private final JTextField idField;
@@ -17,6 +19,8 @@ public class RegistrationForm extends JFrame {
     private final JRadioButton otherRadio;
     private final JCheckBox termsAndConditionsCheckBox;
     private final ButtonGroup genderGroup;
+
+    private String selectedUserId = null; // Store the ID of the selected user
 
     public RegistrationForm() {
         setTitle("Registration Form");
@@ -144,7 +148,7 @@ public class RegistrationForm extends JFrame {
 
         JButton viewDetailsButton = new JButton("View User Details");
         viewDetailsButton.addActionListener(e -> displayUserDetails());
-        gbc.gridx = 0;
+        gbc.gridx = 1;
         gbc.gridy = 12;
         contentPane.add(viewDetailsButton, gbc);
 
@@ -242,6 +246,17 @@ public class RegistrationForm extends JFrame {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading existing users: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+
+        // Add an item listener to the combo box to capture user selection
+        existingUsersCombo.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    String selectedItem = (String) existingUsersCombo.getSelectedItem();
+                    selectedUserId = selectedItem.split(" - ")[0]; // Extract ID from selected item
+                }
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -270,6 +285,11 @@ public class RegistrationForm extends JFrame {
     }
 
     private void displayUserDetails() {
+        if (selectedUserId == null) {
+            JOptionPane.showMessageDialog(this, "Please select a user from the list.", "Information", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
         JFrame detailsFrame = new JFrame("User Details");
         detailsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         detailsFrame.setBounds(100, 100, 500, 300);
@@ -307,8 +327,10 @@ public class RegistrationForm extends JFrame {
         contentPane.add(genderValue);
 
         try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/registration_system", "root", "4228")) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+            String sql = "SELECT * FROM users WHERE id = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, selectedUserId);
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 idValue.setText(rs.getString("id"));
                 nameValue.setText(rs.getString("name"));
@@ -317,7 +339,7 @@ public class RegistrationForm extends JFrame {
                 addressValue.setText(rs.getString("address"));
                 genderValue.setText(rs.getString("gender"));
             } else {
-                JOptionPane.showMessageDialog(detailsFrame, "No user data found.", "Information", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(detailsFrame, "No user data found for the selected ID.", "Information", JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(detailsFrame, "Error loading user details: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
