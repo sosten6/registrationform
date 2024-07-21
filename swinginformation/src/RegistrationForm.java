@@ -264,7 +264,7 @@ public class RegistrationForm extends JFrame {
             try {
                 // Load the MySQL JDBC driver
                 Class.forName("com.mysql.cj.jdbc.Driver"); 
-                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/registration_system", "sosten", "4228")) {
+                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/registration_system", "root", "4228")) {
                     conn.createStatement().execute("CREATE TABLE IF NOT EXISTS users (id VARCHAR(255), name VARCHAR(255), dob VARCHAR(255), mobile VARCHAR(255), address VARCHAR(255), gender VARCHAR(255))");
                 }
             } catch (ClassNotFoundException | SQLException e) {
